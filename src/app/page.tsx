@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { talks } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { fetchTalks } from "@/lib/mock-data";
 import { TalkCard } from "@/components/TalkCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TalkTopic } from "@/types";
 
 export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState<TalkTopic | "All">("All");
 
-  // Array of topics to generate the filter buttons
+  // 1. Fetch data using TanStack Query
+  const { data: talks = [], isPending, isError, error } = useQuery({
+    queryKey: ["talks"],
+    queryFn: fetchTalks,
+  });
+
   const topics: (TalkTopic | "All")[] = [
     "All",
     "Frontend",
@@ -18,7 +25,7 @@ export default function Home() {
     "Mobile",
   ];
 
-  // Filter the talks based on the currently selected topic
+  // 2. Filter now relies on the fetched data
   const filteredTalks = talks.filter(
     (talk) => selectedTopic === "All" || talk.topic === selectedTopic
   );
@@ -49,18 +56,39 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Responsive Grid of Talk Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredTalks.map((talk) => (
-          <TalkCard key={talk.id} talk={talk} />
-        ))}
-      </div>
-
-      {/* Fallback Empty State */}
-      {filteredTalks.length === 0 && (
-        <div className="text-center py-20 text-muted-foreground">
-          <p>No talks scheduled for this topic yet.</p>
+      {/* Error State */}
+      {isError && (
+        <div className="bg-red-100 border border-red-200 text-red-800 p-4 rounded-md mb-8">
+          <p className="font-semibold">Error loading talks:</p>
+          <p>{error?.message}</p>
         </div>
+      )}
+
+      {/* Loading Skeletons */}
+      {isPending && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Responsive Grid of Talk Cards */}
+      {!isPending && !isError && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredTalks.map((talk) => (
+              <TalkCard key={talk.id} talk={talk} />
+            ))}
+          </div>
+
+          {/* Fallback Empty State */}
+          {filteredTalks.length === 0 && (
+            <div className="text-center py-20 text-muted-foreground">
+              <p>No talks scheduled for this topic yet.</p>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

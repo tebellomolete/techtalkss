@@ -12,7 +12,7 @@ interface TalkCardProps {
 }
 
 export function TalkCard({ talk }: TalkCardProps) {
-  // Format the ISO string into something readable (e.g., "Aug 12, 2026, 9:00 AM")
+ 
   const formattedDate = new Date(talk.scheduledAt).toLocaleString("en-ZA", {
     month: "short",
     day: "numeric",
