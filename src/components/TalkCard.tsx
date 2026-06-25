@@ -9,10 +9,11 @@ import {
 
 interface TalkCardProps {
   talk: Talk;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
-export function TalkCard({ talk }: TalkCardProps) {
- 
+export function TalkCard({ talk, isSelected, onSelect }: TalkCardProps) {
   const formattedDate = new Date(talk.scheduledAt).toLocaleString("en-ZA", {
     month: "short",
     day: "numeric",
@@ -22,7 +23,14 @@ export function TalkCard({ talk }: TalkCardProps) {
   });
 
   return (
-    <Card className="flex flex-col h-full w-full">
+    <Card 
+      onClick={onSelect}
+      className={`flex flex-col h-full w-full cursor-pointer transition-all ${
+        isSelected 
+          ? "ring-2 ring-primary border-primary shadow-md" 
+          : "hover:border-foreground/30"
+      }`}
+    >
       <CardHeader>
         <div className="flex justify-between items-start gap-4 mb-2">
           <CardTitle className="text-lg font-bold leading-tight text-foreground">
@@ -39,9 +47,9 @@ export function TalkCard({ talk }: TalkCardProps) {
       
       <CardContent className="flex flex-col flex-1 gap-3 text-sm text-muted-foreground">
         <div className="flex flex-col gap-1.5 mb-auto">
-          <p> {formattedDate}</p>
-          <p> {talk.location}</p>
-          <p> {talk.duration} min</p>
+          <p>📅 {formattedDate}</p>
+          <p>📍 {talk.location}</p>
+          <p>⏳ {talk.duration} min</p>
         </div>
         
         <div className="mt-4 pt-4 border-t">

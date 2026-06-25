@@ -6,11 +6,13 @@ import { fetchTalks } from "@/lib/mock-data";
 import { TalkCard } from "@/components/TalkCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TalkTopic } from "@/types";
+import { RegisterForm } from "@/components/RegisterForm";
 
 export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState<TalkTopic | "All">("All");
+  // NEW: State to track which talk is currently selected
+  const [selectedTalkId, setSelectedTalkId] = useState<number | null>(null);
 
-  // 1. Fetch data using TanStack Query
   const { data: talks = [], isPending, isError, error } = useQuery({
     queryKey: ["talks"],
     queryFn: fetchTalks,
@@ -25,10 +27,18 @@ export default function Home() {
     "Mobile",
   ];
 
-  // 2. Filter now relies on the fetched data
   const filteredTalks = talks.filter(
     (talk) => selectedTopic === "All" || talk.topic === selectedTopic
   );
+
+  // NEW: Handler to toggle the selection
+  const handleTalkSelect = (id: number) => {
+    if (selectedTalkId === id) {
+      setSelectedTalkId(null); // Deselect if clicking the same card
+    } else {
+      setSelectedTalkId(id); // Select the new card
+    }
+  };
 
   return (
     <main className="container mx-auto py-12 px-4 max-w-7xl">
@@ -39,12 +49,14 @@ export default function Home() {
         </p>
       </div>
       
-      {/* Topic Filter Buttons */}
       <div className="flex flex-wrap gap-3 mb-10">
         {topics.map((topic) => (
           <button
             key={topic}
-            onClick={() => setSelectedTopic(topic)}
+            onClick={() => {
+              setSelectedTopic(topic);
+              setSelectedTalkId(null); // Clear selection when filtering changes
+            }}
             className={`px-5 py-2 rounded-full text-sm font-semibold transition-colors border ${
               selectedTopic === topic
                 ? "bg-primary text-primary-foreground border-primary"
@@ -56,7 +68,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Error State */}
       {isError && (
         <div className="bg-red-100 border border-red-200 text-red-800 p-4 rounded-md mb-8">
           <p className="font-semibold">Error loading talks:</p>
@@ -64,7 +75,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Loading Skeletons */}
       {isPending && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -73,22 +83,33 @@ export default function Home() {
         </div>
       )}
 
-      {/* Responsive Grid of Talk Cards */}
       {!isPending && !isError && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredTalks.map((talk) => (
-              <TalkCard key={talk.id} talk={talk} />
+              <TalkCard 
+                key={talk.id} 
+                talk={talk} 
+                isSelected={selectedTalkId === talk.id}
+                onSelect={() => handleTalkSelect(talk.id)}
+              />
             ))}
           </div>
 
-          {/* Fallback Empty State */}
           {filteredTalks.length === 0 && (
             <div className="text-center py-20 text-muted-foreground">
               <p>No talks scheduled for this topic yet.</p>
             </div>
           )}
         </>
+      )}
+
+      {/* Conditionally render the form ONLY if a talk is selected */}
+      {selectedTalkId && (
+        <div className="mt-16 max-w-md mx-auto">
+          {/* We use a key here so React fully remounts the form if they switch talks */}
+          <RegisterForm key={selectedTalkId} talkId={selectedTalkId} />
+        </div>
       )}
     </main>
   );
